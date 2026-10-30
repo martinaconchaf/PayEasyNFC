@@ -13,48 +13,52 @@ import android.database.Cursor
 import java.security.MessageDigest
 
 class SellerDatabase(context: Context) :
-    SQLiteOpenHelper(context, "payeasy.db", null, 3){
+    SQLiteOpenHelper(context, "payeasy.db", null, 4){
+
 
     override fun onCreate(db: SQLiteDatabase) {
-            db.execSQL(
-                """
-                CREATE TABLE bank_accounts (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    seller_id INTEGER NOT NULL UNIQUE,
-                    bank_name TEXT NOT NULL,
-                    account_type TEXT NOT NULL,
-                    account_holder TEXT NOT NULL,
-                    account_number TEXT NOT NULL,
-                    FOREIGN KEY(seller_id)
-                        REFERENCES sellers(id)
-                        ON DELETE CASCADE
-            )
-            """.trimIndent()
-                )
-        }
+
+        db.execSQL(
+            """
+        CREATE TABLE sellers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            password_salt TEXT NOT NULL,
+            failed_attempts INTEGER NOT NULL DEFAULT 0,
+            locked_until INTEGER NOT NULL DEFAULT 0
+        )
+        """.trimIndent()
+        )
+
+        db.execSQL(
+            """
+        CREATE TABLE bank_accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            seller_id INTEGER NOT NULL UNIQUE,
+            bank_name TEXT NOT NULL,
+            account_type TEXT NOT NULL,
+            account_holder TEXT NOT NULL,
+            account_number TEXT NOT NULL,
+            FOREIGN KEY(seller_id)
+                REFERENCES sellers(id)
+                ON DELETE CASCADE
+        )
+        """.trimIndent()
+        )
+    }
+
 
     override fun onUpgrade(
         db: SQLiteDatabase,
         oldVersion: Int,
         newVersion: Int
     ) {
-        if (oldVersion < 3) {
-            db.execSQL(
-                """
-            CREATE TABLE bank_accounts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                seller_id INTEGER NOT NULL UNIQUE,
-                bank_name TEXT NOT NULL,
-                account_type TEXT NOT NULL,
-                account_holder TEXT NOT NULL,
-                account_number TEXT NOT NULL,
-                FOREIGN KEY(seller_id)
-                    REFERENCES sellers(id)
-                    ON DELETE CASCADE
-            )
-        """.trimIndent()
-            )
-        }
+        db.execSQL("DROP TABLE IF EXISTS bank_accounts")
+        db.execSQL("DROP TABLE IF EXISTS sellers")
+
+        onCreate(db)
     }
 
     fun getSellerIdByEmail(email: String): Long? {
