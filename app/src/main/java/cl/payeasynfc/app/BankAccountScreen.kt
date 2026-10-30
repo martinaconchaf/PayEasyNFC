@@ -3,13 +3,14 @@ package cl.payeasynfc.app
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import java.util.concurrent.Executors
 
@@ -21,173 +22,205 @@ fun BankAccountScreen(
     val context = LocalContext.current
     val database = remember { SellerDatabase(context) }
     val executor = remember { Executors.newSingleThreadExecutor() }
-    val handler = remember { Handler(Looper.getMainLooper()) }
+    val mainHandler = remember { Handler(Looper.getMainLooper()) }
 
-    var banco by remember { mutableStateOf("") }
-    var tipoCuenta by remember { mutableStateOf("Cuenta corriente") }
-    var titular by remember { mutableStateOf("") }
-    var numeroCuenta by remember { mutableStateOf("") }
-    var mensaje by remember { mutableStateOf("") }
-    var guardando by remember { mutableStateOf(false) }
+    var bankName by remember { mutableStateOf("") }
+    var accountType by remember { mutableStateOf("") }
+    var accountHolder by remember { mutableStateOf("") }
+    var accountNumber by remember { mutableStateOf("") }
+
+    var bankError by remember { mutableStateOf<String?>(null) }
+    var typeError by remember { mutableStateOf<String?>(null) }
+    var holderError by remember { mutableStateOf<String?>(null) }
+    var numberError by remember { mutableStateOf<String?>(null) }
+
+    var menuExpanded by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<String?>(null) }
+    var saving by remember { mutableStateOf(false) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            executor.shutdown()
+            database.close()
+        }
+    }
+
+    fun validate(): Boolean {
+        bankError = if (bankName.isBlank()) {
+            "Ingresa el nombre del banco"
+        } else null
+
+        typeError = if (accountType !in listOf(
+                "Cuenta corriente",
+                "Cuenta vista",
+                "Cuenta de ahorro"
+            )
+        ) {
+            "Selecciona un tipo de cuenta"
+        } else null
+
+        holderError = if (accountHolder.trim().length < 2) {
+            "Ingresa el nombre del titular (mínimo 2 caracteres)"
+        } else null
+
+        numberError = if (!accountNumber.matches(Regex("^[0-9]{6,20}$"))) {
+            "Ingresa entre 6 y 20 dígitos, sin espacios ni letras"
+        } else null
+
+        return bankError == null &&
+                typeError == null &&
+                holderError == null &&
+                numberError == null
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "PayEasy NFC",
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
             text = "Asociar cuenta bancaria",
-            style = MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.headlineSmall
         )
 
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text = "Vendedor: $sellerEmail",
-            style = MaterialTheme.typography.bodySmall
-        )
-
-        Spacer(Modifier.height(24.dp))
+        Text("Vendedor: $sellerEmail")
 
         OutlinedTextField(
-            value = banco,
+            value = bankName,
             onValueChange = {
-                banco = it
-                mensaje = ""
+                bankName = it
+                bankError = null
             },
             label = { Text("Nombre del banco") },
+            isError = bankError != null,
+            supportingText = {
+                bankError?.let { Text(it) }
+            },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
 
-        Spacer(Modifier.height(12.dp))
+        Column {
+            OutlinedTextField(
+                value = accountType,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Tipo de cuenta") },
+                isError = typeError != null,
+                supportingText = {
+                    typeError?.let { Text(it) }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    TextButton(onClick = {
+                        menuExpanded = true
+                    }) {
+                        Text("Elegir")
+                    }
+                }
+            )
 
-        Text(
-            text = "Tipo de cuenta",
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        var menuAbierto by remember { mutableStateOf(false) }
-
-        Box {
-            OutlinedButton(
-                onClick = { menuAbierto = true },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(tipoCuenta)
-            }
-
-            DropdownMenu(
-                expanded = menuAbierto,
-                onDismissRequest = { menuAbierto = false }
-            ) {
-                listOf(
-                    "Cuenta corriente",
-                    "Cuenta vista",
-                    "Cuenta de ahorro"
-                ).forEach { tipo ->
-                    DropdownMenuItem(
-                        text = { Text(tipo) },
-                        onClick = {
-                            tipoCuenta = tipo
-                            menuAbierto = false
-                        }
-                    )
+            Box {
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    listOf(
+                        "Cuenta corriente",
+                        "Cuenta vista",
+                        "Cuenta de ahorro"
+                    ).forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option) },
+                            onClick = {
+                                accountType = option
+                                typeError = null
+                                menuExpanded = false
+                            }
+                        )
+                    }
                 }
             }
         }
 
-        Spacer(Modifier.height(12.dp))
-
         OutlinedTextField(
-            value = titular,
-            onValueChange = { titular = it },
-            label = { Text("Titular de la cuenta") },
+            value = accountHolder,
+            onValueChange = {
+                accountHolder = it
+                holderError = null
+            },
+            label = { Text("Nombre del titular") },
+            isError = holderError != null,
+            supportingText = {
+                holderError?.let { Text(it) }
+            },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
 
-        Spacer(Modifier.height(12.dp))
-
         OutlinedTextField(
-            value = numeroCuenta,
-            onValueChange = { numeroCuenta = it },
+            value = accountNumber,
+            onValueChange = {
+                accountNumber = it.filter { character ->
+                    character.isDigit()
+                }
+                numberError = null
+            },
             label = { Text("Número de cuenta") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number
-            )
+            ),
+            isError = numberError != null,
+            supportingText = {
+                numberError?.let { Text(it) }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
-
-        Spacer(Modifier.height(24.dp))
 
         Button(
             onClick = {
-                if (
-                    banco.isBlank() ||
-                    titular.isBlank() ||
-                    numeroCuenta.isBlank()
-                ) {
-                    mensaje = "Completa todos los campos."
-                    return@Button
-                }
+                message = null
 
-                guardando = true
+                if (validate()) {
+                    saving = true
 
-                executor.execute {
-                    val resultado = try {
+                    executor.execute {
                         val sellerId =
                             database.getSellerIdByEmail(sellerEmail)
 
-                        sellerId != null &&
+                        val saved = sellerId != null &&
                                 database.saveBankAccount(
                                     sellerId = sellerId,
-                                    bankName = banco.trim(),
-                                    accountType = tipoCuenta,
-                                    accountHolder = titular.trim(),
-                                    accountNumber = numeroCuenta.trim()
+                                    bankName = bankName.trim(),
+                                    accountType = accountType,
+                                    accountHolder = accountHolder.trim(),
+                                    accountNumber = accountNumber
                                 )
-                    } catch (e: Exception) {
-                        false
-                    }
 
-                    handler.post {
-                        guardando = false
-
-                        mensaje = if (resultado) {
-                            "¡Cuenta bancaria asociada correctamente!"
-                        } else {
-                            "No se pudo guardar la cuenta bancaria."
+                        mainHandler.post {
+                            saving = false
+                            message = if (saved) {
+                                "Cuenta bancaria guardada correctamente"
+                            } else {
+                                "No se pudo guardar la cuenta bancaria"
+                            }
                         }
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !guardando
+            enabled = !saving,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text(
-                if (guardando) "Guardando..."
-                else "Asociar cuenta"
-            )
+            Text(if (saving) "Guardando..." else "Guardar cuenta")
         }
 
-        if (mensaje.isNotEmpty()) {
-            Spacer(Modifier.height(16.dp))
+        message?.let {
             Text(
-                text = mensaje,
-                color = if (
-                    mensaje.startsWith("¡")
-                ) {
+                text = it,
+                color = if (it.startsWith("Cuenta bancaria")) {
                     MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.error
@@ -195,17 +228,11 @@ fun BankAccountScreen(
             )
         }
 
-        Spacer(Modifier.height(16.dp))
-
-        TextButton(onClick = onBackToLogin) {
-            Text("Volver al inicio de sesión")
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            executor.shutdown()
-            database.close()
+        OutlinedButton(
+            onClick = onBackToLogin,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Volver")
         }
     }
 }
