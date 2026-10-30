@@ -19,7 +19,9 @@ fun ProfileScreen(
     sellerEmail: String,
     onProfileUpdated: (String) -> Unit,
     onOpenBank: () -> Unit,
+    onSwitchAccount: () -> Unit,
     onLogout: () -> Unit
+
 ) {
     val context = LocalContext.current
     val database = remember { SellerDatabase(context) }
@@ -232,6 +234,13 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Administrar cuenta bancaria")
+            }
+
+            OutlinedButton(
+                onClick = onSwitchAccount,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Cambiar de cuenta")
             }
 
             OutlinedButton(

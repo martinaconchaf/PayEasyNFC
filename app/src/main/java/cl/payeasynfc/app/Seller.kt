@@ -7,3 +7,9 @@ data class Seller(
     val passwordHash: String,
     val passwordSalt: String
 )
+
+data class SellerAccountOption(
+    val id: Long,
+    val name: String,
+    val email: String
+)

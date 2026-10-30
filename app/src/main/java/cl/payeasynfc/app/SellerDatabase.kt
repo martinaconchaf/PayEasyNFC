@@ -407,6 +407,33 @@ class SellerDatabase(context: Context) :
             arrayOf(sellerId.toString())
         ) > 0
     }
+    fun getRegisteredSellers(): List<SellerAccountOption> {
+        val accounts = mutableListOf<SellerAccountOption>()
+
+        val cursor = readableDatabase.query(
+            "sellers",
+            arrayOf("id", "name", "email"),
+            null,
+            null,
+            null,
+            null,
+            "name ASC"
+        )
+
+        cursor.use {
+            while (it.moveToNext()) {
+                accounts.add(
+                    SellerAccountOption(
+                        id = it.getLong(0),
+                        name = it.getString(1),
+                        email = it.getString(2)
+                    )
+                )
+            }
+        }
+
+        return accounts
+    }
 }
 
 enum class LoginResult {

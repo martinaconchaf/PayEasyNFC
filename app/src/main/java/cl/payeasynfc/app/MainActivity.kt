@@ -47,6 +47,9 @@ class MainActivity : ComponentActivity() {
                             onOpenBank = {
                                 pantalla = "banco"
                             },
+                            onSwitchAccount = {
+                                pantalla = "cambiarCuenta"
+                            },
                             onLogout = {
                                 vendedorEmail = ""
                                 pantalla = "login"
@@ -56,6 +59,17 @@ class MainActivity : ComponentActivity() {
                         "banco" -> BankAccountScreen(
                             sellerEmail = vendedorEmail,
                             onBackToLogin = {
+                                pantalla = "perfil"
+                            }
+                        )
+
+                        "cambiarCuenta" -> AccountSwitcherScreen(
+                            currentEmail = vendedorEmail,
+                            onAccountChanged = { nuevoEmail ->
+                                vendedorEmail = nuevoEmail
+                                pantalla = "perfil"
+                            },
+                            onBack = {
                                 pantalla = "perfil"
                             }
                         )
