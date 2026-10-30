@@ -279,6 +279,134 @@ class SellerDatabase(context: Context) :
             return LoginResult.INVALID_CREDENTIALS
         }
     }
+
+    fun getSellerByEmail(email: String): Seller? {
+        val cursor = readableDatabase.query(
+            "sellers",
+            arrayOf("id", "name", "email", "password_hash", "password_salt"),
+            "email = ?",
+            arrayOf(email.trim().lowercase()),
+            null,
+            null,
+            null
+        )
+
+        return cursor.use {
+            if (it.moveToFirst()) {
+                Seller(
+                    id = it.getLong(0),
+                    name = it.getString(1),
+                    email = it.getString(2),
+                    passwordHash = it.getString(3),
+                    passwordSalt = it.getString(4)
+                )
+            } else {
+                null
+            }
+        }
+    }
+
+    fun updateSellerProfile(
+        sellerId: Long,
+        name: String,
+        email: String
+    ): Boolean {
+        val values = ContentValues().apply {
+            put("name", name.trim())
+            put("email", email.trim().lowercase())
+        }
+
+        return try {
+            val rows = writableDatabase.update(
+                "sellers",
+                values,
+                "id = ?",
+                arrayOf(sellerId.toString())
+            )
+            rows > 0
+        } catch (e: SQLiteConstraintException) {
+            // El correo ya pertenece a otro vendedor.
+            false
+        }
+    }
+
+    fun changeSellerPassword(
+        sellerId: Long,
+        currentPassword: String,
+        newPassword: String
+    ): Boolean {
+        val cursor = readableDatabase.query(
+            "sellers",
+            arrayOf("password_hash", "password_salt"),
+            "id = ?",
+            arrayOf(sellerId.toString()),
+            null,
+            null,
+            null
+        )
+
+        val credentials = cursor.use {
+            if (it.moveToFirst()) {
+                Pair(it.getString(0), it.getString(1))
+            } else {
+                null
+            }
+        } ?: return false
+
+        // Comprobar la contraseña actual.
+        val oldSalt = Base64.decode(credentials.second, Base64.NO_WRAP)
+        val oldSpec = PBEKeySpec(
+            currentPassword.toCharArray(),
+            oldSalt,
+            120_000,
+            256
+        )
+
+        val enteredHash = SecretKeyFactory
+            .getInstance("PBKDF2WithHmacSHA256")
+            .generateSecret(oldSpec)
+            .encoded
+
+        oldSpec.clearPassword()
+
+        val storedHash = Base64.decode(credentials.first, Base64.NO_WRAP)
+
+        if (!MessageDigest.isEqual(enteredHash, storedHash)) {
+            return false
+        }
+
+        // Generar una sal nueva para la contraseña nueva.
+        val newSalt = ByteArray(16)
+        SecureRandom().nextBytes(newSalt)
+
+        val newSpec = PBEKeySpec(
+            newPassword.toCharArray(),
+            newSalt,
+            120_000,
+            256
+        )
+
+        val newHash = SecretKeyFactory
+            .getInstance("PBKDF2WithHmacSHA256")
+            .generateSecret(newSpec)
+            .encoded
+
+        newSpec.clearPassword()
+
+        val values = ContentValues().apply {
+            put("password_hash", Base64.encodeToString(newHash, Base64.NO_WRAP))
+            put("password_salt", Base64.encodeToString(newSalt, Base64.NO_WRAP))
+            put("failed_attempts", 0)
+            put("locked_until", 0)
+        }
+
+        return writableDatabase.update(
+            "sellers",
+            values,
+            "id = ?",
+            arrayOf(sellerId.toString())
+        ) > 0
+    }
 }
 
 enum class LoginResult {

@@ -15,13 +15,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            var pantalla by remember {
-                mutableStateOf("registro")
-            }
-
-            var vendedorEmail by remember {
-                mutableStateOf("")
-            }
+            var pantalla by remember { mutableStateOf("registro") }
+            var vendedorEmail by remember { mutableStateOf("") }
 
             MaterialTheme {
                 Surface(
@@ -40,14 +35,28 @@ class MainActivity : ComponentActivity() {
                             },
                             onLoginSuccess = { email ->
                                 vendedorEmail = email
+                                pantalla = "perfil"
+                            }
+                        )
+
+                        "perfil" -> ProfileScreen(
+                            sellerEmail = vendedorEmail,
+                            onProfileUpdated = { nuevoEmail ->
+                                vendedorEmail = nuevoEmail
+                            },
+                            onOpenBank = {
                                 pantalla = "banco"
+                            },
+                            onLogout = {
+                                vendedorEmail = ""
+                                pantalla = "login"
                             }
                         )
 
                         "banco" -> BankAccountScreen(
                             sellerEmail = vendedorEmail,
                             onBackToLogin = {
-                                pantalla = "login"
+                                pantalla = "perfil"
                             }
                         )
                     }
