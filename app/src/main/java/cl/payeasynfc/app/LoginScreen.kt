@@ -1,5 +1,7 @@
 package cl.payeasynfc.app
 
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -9,14 +11,23 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import java.util.concurrent.Executors
 
 @Composable
 fun LoginScreen(
     onBackToRegister: () -> Unit
 ) {
+    val context = LocalContext.current
+    val database = remember { SellerDatabase(context) }
+    val executor = remember { Executors.newSingleThreadExecutor() }
+    val mainHandler = remember { Handler(Looper.getMainLooper()) }
+
     var correo by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var mensaje by remember { mutableStateOf("") }
+    var accesoExitoso by remember { mutableStateOf(false) }
+    var ingresando by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -71,25 +82,89 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                mensaje = "La autenticación se implementará en el Día 5."
+                mensaje = ""
+                accesoExitoso = false
+
+                if (correo.isBlank() || password.isBlank()) {
+                    mensaje = "Ingresa tu correo y contraseña."
+                    return@Button
+                }
+
+                ingresando = true
+
+                executor.execute {
+                    val resultado = try {
+                        database.authenticateSeller(
+                            correo,
+                            password
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+
+                    mainHandler.post {
+                        ingresando = false
+
+                        when (resultado) {
+                            LoginResult.SUCCESS -> {
+                                accesoExitoso = true
+                                mensaje = "¡Inicio de sesión exitoso!"
+                            }
+
+                            LoginResult.INVALID_CREDENTIALS -> {
+                                mensaje =
+                                    "Correo o contraseña incorrectos."
+                            }
+
+                            LoginResult.ACCOUNT_LOCKED -> {
+                                mensaje =
+                                    "Cuenta bloqueada temporalmente. " +
+                                            "Intenta nuevamente en 15 minutos."
+                            }
+
+                            null -> {
+                                mensaje =
+                                    "Ocurrió un error. Intenta nuevamente."
+                            }
+                        }
+                    }
+                }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !ingresando
         ) {
-            Text("Ingresar")
+            Text(
+                if (ingresando) "Verificando..."
+                else "Ingresar"
+            )
         }
 
         if (mensaje.isNotEmpty()) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
+
             Text(
                 text = mensaje,
-                color = MaterialTheme.colorScheme.primary
+                color = if (accesoExitoso) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                }
             )
         }
 
         Spacer(Modifier.height(16.dp))
 
-        TextButton(onClick = onBackToRegister) {
+        TextButton(
+            onClick = onBackToRegister
+        ) {
             Text("¿No tienes cuenta? Regístrate")
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            executor.shutdown()
+            database.close()
         }
     }
 }
