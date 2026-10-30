@@ -1,36 +1,34 @@
 package cl.payeasynfc.app
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import android.os.Handler
+import android.os.Looper
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.Alignment
+import java.util.concurrent.Executors
 
 @Composable
 fun RegisterScreen() {
+    val context = LocalContext.current
+    val database = remember { SellerDatabase(context) }
+    val executor = remember { Executors.newSingleThreadExecutor() }
+    val mainHandler = remember { Handler(Looper.getMainLooper()) }
+
     var nombre by remember { mutableStateOf("") }
     var correo by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmarPassword by remember { mutableStateOf("") }
+    var mensaje by remember { mutableStateOf("") }
+    var guardando by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -41,18 +39,18 @@ fun RegisterScreen() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "PayEasy NFC",
+            "PayEasy NFC",
             style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "Crear cuenta de vendedor",
+            "Crear cuenta de vendedor",
             style = MaterialTheme.typography.titleLarge
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(Modifier.height(24.dp))
 
         OutlinedTextField(
             value = nombre,
@@ -62,7 +60,7 @@ fun RegisterScreen() {
             singleLine = true
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
         OutlinedTextField(
             value = correo,
@@ -75,7 +73,7 @@ fun RegisterScreen() {
             )
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
         OutlinedTextField(
             value = password,
@@ -86,7 +84,7 @@ fun RegisterScreen() {
             visualTransformation = PasswordVisualTransformation()
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
         OutlinedTextField(
             value = confirmarPassword,
@@ -97,16 +95,73 @@ fun RegisterScreen() {
             visualTransformation = PasswordVisualTransformation()
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(Modifier.height(20.dp))
 
         Button(
             onClick = {
-                // El registro y sus validaciones se implementarán
-                // en los próximos días del Sprint 1.
+                mensaje = ""
+
+                if (
+                    nombre.isBlank() ||
+                    correo.isBlank() ||
+                    password.isBlank() ||
+                    confirmarPassword.isBlank()
+                ) {
+                    mensaje = "Completa todos los campos."
+                    return@Button
+                }
+
+                if (password != confirmarPassword) {
+                    mensaje = "Las contraseñas no coinciden."
+                    return@Button
+                }
+
+                guardando = true
+
+                executor.execute {
+                    val resultado = try {
+                        database.registerSeller(
+                            nombre.trim(),
+                            correo.trim(),
+                            password
+                        )
+                    } catch (e: Exception) {
+                        false
+                    }
+
+                    mainHandler.post {
+                        guardando = false
+
+                        if (resultado) {
+                            mensaje = "¡Cuenta creada correctamente!"
+                            nombre = ""
+                            correo = ""
+                            password = ""
+                            confirmarPassword = ""
+                        } else {
+                            mensaje =
+                                "No se pudo crear la cuenta. " +
+                                        "Comprueba si el correo ya está registrado."
+                        }
+                    }
+                }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !guardando
         ) {
-            Text("Crear cuenta")
+            Text(if (guardando) "Guardando..." else "Crear cuenta")
+        }
+
+        if (mensaje.isNotEmpty()) {
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = mensaje,
+                color = if (mensaje.startsWith("¡")) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                }
+            )
         }
     }
 }
