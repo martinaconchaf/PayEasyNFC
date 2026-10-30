@@ -18,7 +18,9 @@ import androidx.compose.ui.unit.dp
 import java.util.concurrent.Executors
 
 @Composable
-fun RegisterScreen() {
+fun RegisterScreen(
+    onGoToLogin: () -> Unit = {}
+) {
     val context = LocalContext.current
     val database = remember { SellerDatabase(context) }
     val executor = remember { Executors.newSingleThreadExecutor() }
@@ -234,6 +236,14 @@ fun RegisterScreen() {
                 if (guardando) "Validando y guardando..."
                 else "Crear cuenta"
             )
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        TextButton(
+            onClick = onGoToLogin
+        ) {
+            Text("¿Ya tienes cuenta? Inicia sesión")
         }
 
         if (mensaje.isNotEmpty()) {
