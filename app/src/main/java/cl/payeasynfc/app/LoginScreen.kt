@@ -16,8 +16,9 @@ import java.util.concurrent.Executors
 
 @Composable
 fun LoginScreen(
-    onBackToRegister: () -> Unit
-) {
+    onBackToRegister: () -> Unit,
+    onLoginSuccess: (String) -> Unit
+){
     val context = LocalContext.current
     val database = remember { SellerDatabase(context) }
     val executor = remember { Executors.newSingleThreadExecutor() }
@@ -109,6 +110,7 @@ fun LoginScreen(
                             LoginResult.SUCCESS -> {
                                 accesoExitoso = true
                                 mensaje = "¡Inicio de sesión exitoso!"
+                                onLoginSuccess(correo.trim().lowercase())
                             }
 
                             LoginResult.INVALID_CREDENTIALS -> {

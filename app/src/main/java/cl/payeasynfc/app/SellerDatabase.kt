@@ -13,22 +13,24 @@ import android.database.Cursor
 import java.security.MessageDigest
 
 class SellerDatabase(context: Context) :
-    SQLiteOpenHelper(context, "payeasy.db", null, 2){
+    SQLiteOpenHelper(context, "payeasy.db", null, 3){
 
     override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
                 """
-                CREATE TABLE sellers (
+                CREATE TABLE bank_accounts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    email TEXT NOT NULL UNIQUE,
-                    password_hash TEXT NOT NULL,
-                    password_salt TEXT NOT NULL,
-                    failed_attempts INTEGER NOT NULL DEFAULT 0,
-                    locked_until INTEGER NOT NULL DEFAULT 0
-                )
-                """.trimIndent()
+                    seller_id INTEGER NOT NULL UNIQUE,
+                    bank_name TEXT NOT NULL,
+                    account_type TEXT NOT NULL,
+                    account_holder TEXT NOT NULL,
+                    account_number TEXT NOT NULL,
+                    FOREIGN KEY(seller_id)
+                        REFERENCES sellers(id)
+                        ON DELETE CASCADE
             )
+            """.trimIndent()
+                )
         }
 
     override fun onUpgrade(
@@ -36,21 +38,74 @@ class SellerDatabase(context: Context) :
         oldVersion: Int,
         newVersion: Int
     ) {
-        if (oldVersion < 2) {
+        if (oldVersion < 3) {
             db.execSQL(
                 """
-                ALTER TABLE sellers
-                ADD COLUMN failed_attempts INTEGER NOT NULL DEFAULT 0
-                """.trimIndent()
+            CREATE TABLE bank_accounts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                seller_id INTEGER NOT NULL UNIQUE,
+                bank_name TEXT NOT NULL,
+                account_type TEXT NOT NULL,
+                account_holder TEXT NOT NULL,
+                account_number TEXT NOT NULL,
+                FOREIGN KEY(seller_id)
+                    REFERENCES sellers(id)
+                    ON DELETE CASCADE
             )
-
-            db.execSQL(
-                """
-                ALTER TABLE sellers
-                ADD COLUMN locked_until INTEGER NOT NULL DEFAULT 0
-                """.trimIndent()
+        """.trimIndent()
             )
         }
+    }
+
+    fun getSellerIdByEmail(email: String): Long? {
+        val cursor = readableDatabase.query(
+            "sellers",
+            arrayOf("id"),
+            "email = ?",
+            arrayOf(email.trim().lowercase()),
+            null,
+            null,
+            null
+        )
+
+        cursor.use {
+            return if (it.moveToFirst()) {
+                it.getLong(0)
+            } else {
+                null
+            }
+        }
+    }
+
+    fun saveBankAccount(
+        sellerId: Long,
+        bankName: String,
+        accountType: String,
+        accountHolder: String,
+        accountNumber: String
+    ): Boolean {
+
+        val values = android.content.ContentValues().apply {
+            put("seller_id", sellerId)
+            put("bank_name", bankName)
+            put("account_type", accountType)
+            put("account_holder", accountHolder)
+            put("account_number", accountNumber)
+        }
+
+        val result = writableDatabase.insertWithOnConflict(
+            "bank_accounts",
+            null,
+            values,
+            SQLiteDatabase.CONFLICT_REPLACE
+        )
+
+        return result != -1L
+    }
+
+    override fun onConfigure(db: SQLiteDatabase) {
+        super.onConfigure(db)
+        db.setForeignKeyConstraintsEnabled(true)
     }
     fun registerSeller(
         name: String,

@@ -10,12 +10,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             var pantalla by remember {
                 mutableStateOf("registro")
+            }
+
+            var vendedorEmail by remember {
+                mutableStateOf("")
             }
 
             MaterialTheme {
@@ -32,6 +37,17 @@ class MainActivity : ComponentActivity() {
                         "login" -> LoginScreen(
                             onBackToRegister = {
                                 pantalla = "registro"
+                            },
+                            onLoginSuccess = { email ->
+                                vendedorEmail = email
+                                pantalla = "banco"
+                            }
+                        )
+
+                        "banco" -> BankAccountScreen(
+                            sellerEmail = vendedorEmail,
+                            onBackToLogin = {
+                                pantalla = "login"
                             }
                         )
                     }
