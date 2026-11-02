@@ -65,8 +65,8 @@ fun SalesHistoryScreen(
     var searchAmount by remember {
         mutableStateOf<Long?>(null)
     }
-    var sortByAmount by remember {
-        mutableStateOf("DESC")
+    var sortMode by remember {
+        mutableStateOf("AMOUNT_DESC")
     }
 
     val filteredSales = remember(
@@ -94,10 +94,19 @@ fun SalesHistoryScreen(
             matchesDate && matchesAmount
         }
     }
-    val sortedSales = remember(filteredSales, sortByAmount) {
-        when (sortByAmount) {
-            "ASC" -> filteredSales.sortedBy { it.amount }
-            else -> filteredSales.sortedByDescending { it.amount }
+    val sortedSales = remember(filteredSales, sortMode) {
+        when (sortMode) {
+            "AMOUNT_ASC" ->
+                filteredSales.sortedBy { it.amount }
+
+            "DATE_DESC" ->
+                filteredSales.sortedByDescending { it.createdAt }
+
+            "DATE_ASC" ->
+                filteredSales.sortedBy { it.createdAt }
+
+            else ->
+                filteredSales.sortedByDescending { it.amount }
         }
     }
 
@@ -197,7 +206,7 @@ fun SalesHistoryScreen(
         ) {
             Button(
                 onClick = {
-                    sortByAmount = "DESC"
+                    sortMode = "AMOUNT_DESC"
                 },
                 modifier = Modifier.weight(1f)
             ) {
@@ -206,11 +215,39 @@ fun SalesHistoryScreen(
 
             Button(
                 onClick = {
-                    sortByAmount = "ASC"
+                    sortMode = "AMOUNT_ASC"
                 },
                 modifier = Modifier.weight(1f)
             ) {
                 Text("Menor a mayor")
+            }
+        }
+
+        Text(
+            text = "Ordenar ventas por fecha",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = {
+                    sortMode = "DATE_DESC"
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Más recientes")
+            }
+
+            Button(
+                onClick = {
+                    sortMode = "DATE_ASC"
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Más antiguas")
             }
         }
 
