@@ -19,6 +19,7 @@ class MainActivity : ComponentActivity() {
             var vendedorEmail by remember { mutableStateOf("") }
             var montoVenta by remember { mutableStateOf(0L) }
             var metodoPago by remember { mutableStateOf("") }
+            var transactionId by remember { mutableStateOf("") }
 
             MaterialTheme {
                 Surface(
@@ -106,10 +107,23 @@ class MainActivity : ComponentActivity() {
                             amount = montoVenta,
                             paymentMethod = metodoPago,
                             onFinish = {
-                                pantalla = "perfil"
+                                transactionId = "PAY-${System.currentTimeMillis()}"
+                                pantalla = "comprobante"
                             },
                             onBack = {
                                 pantalla = "metodoPago"
+                            }
+                        )
+
+                        "comprobante" -> PaymentReceiptScreen(
+                            transactionId = transactionId,
+                            amount = montoVenta,
+                            paymentMethod = metodoPago,
+                            onFinish = {
+                                montoVenta = 0L
+                                metodoPago = ""
+                                transactionId = ""
+                                pantalla = "perfil"
                             }
                         )
                     }
