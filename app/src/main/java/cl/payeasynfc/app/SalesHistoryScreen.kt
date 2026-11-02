@@ -44,7 +44,8 @@ private fun parseSearchDate(value: String): Long? {
 fun SalesHistoryScreen(
     sales: List<SaleTransaction>,
     onBack: () -> Unit,
-    onSelectSale: (SaleTransaction) -> Unit
+    onSelectSale: (SaleTransaction) -> Unit,
+
 ) {
     var dateQuery by remember {
         mutableStateOf("")
@@ -57,22 +58,37 @@ fun SalesHistoryScreen(
     var errorMessage by remember {
         mutableStateOf("")
     }
+    var amountQuery by remember {
+        mutableStateOf("")
+    }
 
-    val filteredSales = remember(sales, searchDate) {
-        if (searchDate == null) {
-            sales
-        } else {
-            val calendar = Calendar.getInstance().apply {
-                timeInMillis = searchDate!!
-                add(Calendar.DAY_OF_MONTH, 1)
-            }
+    var searchAmount by remember {
+        mutableStateOf<Long?>(null)
+    }
 
-            val nextDay = calendar.timeInMillis
+    val filteredSales = remember(
+        sales,
+        searchDate,
+        searchAmount
+    ) {
+        sales.filter { sale ->
 
-            sales.filter { sale ->
+            val matchesDate = if (searchDate == null) {
+                true
+            } else {
+                val calendar = Calendar.getInstance().apply {
+                    timeInMillis = searchDate!!
+                    add(Calendar.DAY_OF_MONTH, 1)
+                }
+
                 sale.createdAt >= searchDate!! &&
-                        sale.createdAt < nextDay
+                        sale.createdAt < calendar.timeInMillis
             }
+
+            val matchesAmount = searchAmount == null ||
+                    sale.amount == searchAmount
+
+            matchesDate && matchesAmount
         }
     }
 
@@ -104,6 +120,43 @@ fun SalesHistoryScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
+        OutlinedTextField(
+            value = amountQuery,
+            onValueChange = {
+                if (it.all { character -> character.isDigit() }) {
+                    amountQuery = it
+                    errorMessage = ""
+                }
+            },
+            label = {
+                Text("Buscar por monto")
+            },
+            placeholder = {
+                Text("Ejemplo: 10000")
+            },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = {
+                val amount = amountQuery.toLongOrNull()
+
+                if (amount == null || amount <= 0L) {
+                    searchAmount = null
+                    errorMessage = "Ingresa un monto válido mayor que cero."
+                } else {
+                    searchAmount = amount
+                    errorMessage = ""
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Buscar por monto")
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(
@@ -128,6 +181,8 @@ fun SalesHistoryScreen(
             onClick = {
                 dateQuery = ""
                 searchDate = null
+                amountQuery = ""
+                searchAmount = null
                 errorMessage = ""
             },
             modifier = Modifier.fillMaxWidth()
@@ -142,12 +197,22 @@ fun SalesHistoryScreen(
             )
         }
 
+        var amountQuery by remember {
+            mutableStateOf("")
+        }
+
+        var searchAmount by remember {
+            mutableStateOf<Long?>(null)
+        }
+
         Spacer(modifier = Modifier.height(12.dp))
 
         if (filteredSales.isEmpty()) {
             Text(
-                text = if (searchDate != null) {
-                    "No se encontraron ventas para esa fecha."
+                text = if (
+                    searchDate != null || searchAmount != null
+                ) {
+                    "No se encontraron ventas con los criterios ingresados."
                 } else {
                     "Todavía no tienes ventas registradas."
                 }
