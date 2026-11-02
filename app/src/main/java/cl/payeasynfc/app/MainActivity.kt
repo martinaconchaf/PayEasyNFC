@@ -17,6 +17,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             var pantalla by remember { mutableStateOf("registro") }
             var vendedorEmail by remember { mutableStateOf("") }
+            var montoVenta by remember { mutableStateOf(0L) }
 
             MaterialTheme {
                 Surface(
@@ -50,10 +51,15 @@ class MainActivity : ComponentActivity() {
                             onSwitchAccount = {
                                 pantalla = "cambiarCuenta"
                             },
+                            onOpenSale = {
+                                pantalla = "cobro"
+                            },
                             onLogout = {
                                 vendedorEmail = ""
                                 pantalla = "login"
                             }
+
+
                         )
 
                         "banco" -> BankAccountScreen(
@@ -67,6 +73,16 @@ class MainActivity : ComponentActivity() {
                             currentEmail = vendedorEmail,
                             onAccountChanged = { nuevoEmail ->
                                 vendedorEmail = nuevoEmail
+                                pantalla = "perfil"
+                            },
+                            onBack = {
+                                pantalla = "perfil"
+                            }
+                        )
+
+                        "cobro" -> SaleAmountScreen(
+                            onAmountConfirmed = { monto ->
+                                montoVenta = monto
                                 pantalla = "perfil"
                             },
                             onBack = {

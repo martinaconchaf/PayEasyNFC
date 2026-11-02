@@ -20,6 +20,7 @@ fun ProfileScreen(
     onProfileUpdated: (String) -> Unit,
     onOpenBank: () -> Unit,
     onSwitchAccount: () -> Unit,
+    onOpenSale: () -> Unit,
     onLogout: () -> Unit
 
 ) {
@@ -234,6 +235,13 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Administrar cuenta bancaria")
+            }
+
+            Button(
+                onClick = onOpenSale,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Nuevo cobro")
             }
 
             OutlinedButton(
