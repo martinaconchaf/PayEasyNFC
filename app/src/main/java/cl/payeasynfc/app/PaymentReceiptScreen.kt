@@ -21,12 +21,13 @@ fun PaymentReceiptScreen(
     transactionId: String,
     amount: Long,
     paymentMethod: String,
+    createdAt: Long,
     onFinish: () -> Unit
 ) {
     val date = SimpleDateFormat(
         "dd/MM/yyyy HH:mm",
         Locale("es", "CL")
-    ).format(Date())
+    ).format(Date(createdAt))
 
     Column(
         modifier = Modifier

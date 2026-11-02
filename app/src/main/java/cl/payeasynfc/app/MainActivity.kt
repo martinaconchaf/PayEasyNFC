@@ -22,6 +22,15 @@ class MainActivity : ComponentActivity() {
             var transactionId by remember { mutableStateOf("") }
             var pagoAprobado by remember { mutableStateOf(false) }
             var mensajeResultado by remember { mutableStateOf("") }
+            val sellerDatabase = remember {
+                SellerDatabase(this@MainActivity)
+            }
+            var transactionDate by remember {
+                mutableStateOf(0L)
+            }
+            var transactionSaved by remember {
+                mutableStateOf(false)
+            }
 
             MaterialTheme {
                 Surface(
@@ -105,21 +114,57 @@ class MainActivity : ComponentActivity() {
                             }
                         )
 
+
                         "procesando" -> PaymentProcessingScreen(
                             amount = montoVenta,
                             paymentMethod = metodoPago,
+
+
                             onResult = { aprobado, mensaje ->
                                 pagoAprobado = aprobado
                                 mensajeResultado = mensaje
 
                                 if (aprobado) {
-                                    transactionId = "PAY-${System.currentTimeMillis()}"
+                                    transactionId =
+                                        "PAY-${System.currentTimeMillis()}"
+
+                                    transactionDate = System.currentTimeMillis()
+
+                                    transactionSaved = sellerDatabase.saveTransaction(
+                                        sellerEmail = vendedorEmail,
+                                        transactionCode = transactionId,
+                                        amount = montoVenta,
+                                        paymentMethod = metodoPago,
+                                        status = "APPROVED",
+                                        createdAt = transactionDate
+                                    )
+                                } else {
+                                    transactionSaved = false
                                 }
 
                                 pantalla = "resultadoPago"
                             },
+
                             onBack = {
                                 pantalla = "metodoPago"
+                            },
+
+                            onCancel = {
+                                val codigoCancelacion =
+                                    "CAN-${System.currentTimeMillis()}"
+
+                                sellerDatabase.saveTransaction(
+                                    sellerEmail = vendedorEmail,
+                                    transactionCode = codigoCancelacion,
+                                    amount = montoVenta,
+                                    paymentMethod = metodoPago,
+                                    status = "CANCELLED",
+                                    createdAt = System.currentTimeMillis()
+                                )
+
+                                montoVenta = 0L
+                                metodoPago = ""
+                                pantalla = "perfil"
                             }
                         )
 
@@ -127,10 +172,13 @@ class MainActivity : ComponentActivity() {
                             transactionId = transactionId,
                             amount = montoVenta,
                             paymentMethod = metodoPago,
+                            createdAt = transactionDate,
                             onFinish = {
                                 montoVenta = 0L
                                 metodoPago = ""
                                 transactionId = ""
+                                transactionDate = 0L
+                                transactionSaved = false
                                 pantalla = "perfil"
                             }
                         )
@@ -139,8 +187,12 @@ class MainActivity : ComponentActivity() {
                             approved = pagoAprobado,
                             message = mensajeResultado,
                             onContinue = {
-                                if (pagoAprobado) {
+                                if (pagoAprobado && transactionSaved) {
                                     pantalla = "comprobante"
+                                } else if (pagoAprobado) {
+                                    mensajeResultado =
+                                        "El pago fue simulado como aprobado, pero no se pudo guardar el registro."
+                                    pantalla = "perfil"
                                 } else {
                                     pantalla = "metodoPago"
                                 }

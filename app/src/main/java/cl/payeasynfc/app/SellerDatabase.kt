@@ -13,7 +13,7 @@ import android.database.Cursor
 import java.security.MessageDigest
 
 class SellerDatabase(context: Context) :
-    SQLiteOpenHelper(context, "payeasy.db", null, 4){
+    SQLiteOpenHelper(context, "payeasy.db", null, 5){
 
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -47,18 +47,70 @@ class SellerDatabase(context: Context) :
         )
         """.trimIndent()
         )
+
+        createTransactionsTable(db)
     }
 
+    private fun createTransactionsTable(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+        CREATE TABLE IF NOT EXISTS transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            transaction_code TEXT NOT NULL UNIQUE,
+            seller_id INTEGER NOT NULL,
+            amount INTEGER NOT NULL,
+            payment_method TEXT NOT NULL,
+            status TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
+            FOREIGN KEY(seller_id)
+                REFERENCES sellers(id)
+                ON DELETE CASCADE
+        )
+        """.trimIndent()
+        )
+    }
 
     override fun onUpgrade(
         db: SQLiteDatabase,
         oldVersion: Int,
         newVersion: Int
     ) {
-        db.execSQL("DROP TABLE IF EXISTS bank_accounts")
-        db.execSQL("DROP TABLE IF EXISTS sellers")
+        if (oldVersion < 5) {
+            createTransactionsTable(db)
+        }
+    }
 
-        onCreate(db)
+    fun saveTransaction(
+        sellerEmail: String,
+        transactionCode: String,
+        amount: Long,
+        paymentMethod: String,
+        status: String,
+        createdAt: Long
+    ): Boolean {
+
+        val sellerId = getSellerIdByEmail(sellerEmail)
+            ?: return false
+
+        val values = ContentValues().apply {
+            put("transaction_code", transactionCode)
+            put("seller_id", sellerId)
+            put("amount", amount)
+            put("payment_method", paymentMethod)
+            put("status", status)
+            put("created_at", createdAt)
+        }
+
+        return try {
+            writableDatabase.insertOrThrow(
+                "transactions",
+                null,
+                values
+            )
+            true
+        } catch (e: SQLiteConstraintException) {
+            false
+        }
     }
 
     fun getSellerIdByEmail(email: String): Long? {

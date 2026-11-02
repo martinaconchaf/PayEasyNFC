@@ -18,6 +18,7 @@ fun PaymentProcessingScreen(
     amount: Long,
     paymentMethod: String,
     onResult: (Boolean, String) -> Unit,
+    onCancel: () -> Unit,
     onBack: () -> Unit
 ) {
     Column(
@@ -37,6 +38,13 @@ fun PaymentProcessingScreen(
         Text(
             text = "Esperando respuesta del proveedor (simulación)."
         )
+
+        OutlinedButton(
+            onClick = onCancel,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Cancelar cobro")
+        }
 
         Button(
             onClick = {
