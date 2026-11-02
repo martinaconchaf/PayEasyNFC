@@ -111,5 +111,31 @@ object ReceiptPdf {
             Intent.createChooser(intent, "Enviar comprobante")
         )
     }
+    fun shareToSeller(
+        context: Context,
+        file: File,
+        sellerEmail: String
+    ) {
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
 
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_EMAIL, arrayOf(sellerEmail))
+            putExtra(Intent.EXTRA_SUBJECT, "Copia de comprobante PayEasy NFC")
+            putExtra(
+                Intent.EXTRA_TEXT,
+                "Adjunto una copia del comprobante de la venta."
+            )
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        context.startActivity(
+            Intent.createChooser(intent, "Enviar copia al vendedor")
+        )
+    }
 }

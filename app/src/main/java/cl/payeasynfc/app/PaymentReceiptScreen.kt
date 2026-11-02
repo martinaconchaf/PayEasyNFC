@@ -24,6 +24,7 @@ fun PaymentReceiptScreen(
     createdAt: Long,
     onSaveReceipt: () -> Unit,
     onShareReceipt: () -> Unit,
+    onShareSellerCopy: () -> Unit,
     onFinish: () -> Unit,
 
 ) {
@@ -66,6 +67,13 @@ fun PaymentReceiptScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Enviar comprobante")
+        }
+
+        Button(
+            onClick = onShareSellerCopy,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Enviar copia al vendedor")
         }
 
         Button(

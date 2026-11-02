@@ -227,6 +227,31 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
 
+                            onShareSellerCopy = {
+                                try {
+                                    val pdf = ReceiptPdf.create(
+                                        context = context,
+                                        transactionId = transactionId,
+                                        amount = montoVenta,
+                                        paymentMethod = metodoPago,
+                                        createdAt = transactionDate
+                                    )
+
+                                    ReceiptPdf.shareToSeller(
+                                        context = context,
+                                        file = pdf,
+                                        sellerEmail = vendedorEmail
+                                    )
+
+                                } catch (e: Exception) {
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "No se pudo preparar la copia para el vendedor",
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            },
+
                             onFinish = {
                                 montoVenta = 0L
                                 metodoPago = ""
@@ -255,6 +280,7 @@ class MainActivity : ComponentActivity() {
                                 pantalla = "perfil"
                             }
                         )
+
                     }
                 }
             }
