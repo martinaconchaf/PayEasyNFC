@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.text.Normalizer
 
 private fun parseSearchDate(value: String): Long? {
     val formatter = SimpleDateFormat(
@@ -69,10 +70,15 @@ fun SalesHistoryScreen(
         mutableStateOf("AMOUNT_DESC")
     }
 
+    var cardFilter by remember {
+        mutableStateOf("ALL")
+    }
+
     val filteredSales = remember(
         sales,
         searchDate,
-        searchAmount
+        searchAmount,
+        cardFilter
     ) {
         sales.filter { sale ->
 
@@ -88,12 +94,24 @@ fun SalesHistoryScreen(
                         sale.createdAt < calendar.timeInMillis
             }
 
-            val matchesAmount = searchAmount == null ||
-                    sale.amount == searchAmount
+            val matchesAmount =
+                searchAmount == null ||
+                        sale.amount == searchAmount
 
-            matchesDate && matchesAmount
+            val matchesCard = when (cardFilter) {
+                "DEBIT" -> normalizePaymentMethod(
+                    sale.paymentMethod
+                ).contains("deb")
+
+                "ALL" -> true
+
+                else -> true
+            }
+
+            matchesDate && matchesAmount && matchesCard
         }
     }
+
     val sortedSales = remember(filteredSales, sortMode) {
         when (sortMode) {
             "AMOUNT_ASC" ->
@@ -250,6 +268,32 @@ fun SalesHistoryScreen(
                 Text("Más antiguas")
             }
         }
+        Text(
+            text = "Filtrar por medio de pago",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = {
+                    cardFilter = "DEBIT"
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Solo débito")
+            }
+            OutlinedButton(
+                onClick = {
+                    cardFilter = "ALL"
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Todas")
+            }
+        }
 
         OutlinedButton(
             onClick = {
@@ -344,4 +388,13 @@ fun SalesHistoryScreen(
             Text("Volver al perfil")
         }
     }
+}
+
+private fun normalizePaymentMethod(value: String): String {
+    return Normalizer.normalize(
+        value,
+        Normalizer.Form.NFD
+    )
+        .replace("\\p{Mn}+".toRegex(), "")
+        .lowercase(Locale.ROOT)
 }
