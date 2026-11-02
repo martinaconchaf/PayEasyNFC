@@ -32,6 +32,9 @@ class MainActivity : ComponentActivity() {
                 mutableStateOf(false)
             }
             val context = androidx.compose.ui.platform.LocalContext.current
+            var ventasHistorial by remember {
+                mutableStateOf<List<SaleTransaction>>(emptyList())
+            }
 
             MaterialTheme {
                 Surface(
@@ -59,6 +62,12 @@ class MainActivity : ComponentActivity() {
                             onProfileUpdated = { nuevoEmail ->
                                 vendedorEmail = nuevoEmail
                             },
+                            onOpenHistory = {
+                                ventasHistorial =
+                                    sellerDatabase.getSalesHistory(vendedorEmail)
+
+                                pantalla = "historial"
+                            },
                             onOpenBank = {
                                 pantalla = "banco"
                             },
@@ -72,8 +81,16 @@ class MainActivity : ComponentActivity() {
                                 vendedorEmail = ""
                                 pantalla = "login"
                             }
+                        )
 
-
+                        "historial" -> SalesHistoryScreen(
+                            sales = ventasHistorial,
+                            onBack = {
+                                pantalla = "perfil"
+                            },
+                            onSelectSale = { venta ->
+                                // El detalle se implementará en el Día 2.
+                            }
                         )
 
                         "banco" -> BankAccountScreen(
@@ -205,6 +222,8 @@ class MainActivity : ComponentActivity() {
                                     ).show()
                                 }
                             },
+
+
 
                             onShareReceipt = {
                                 try {

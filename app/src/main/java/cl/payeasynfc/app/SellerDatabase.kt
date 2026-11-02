@@ -336,6 +336,41 @@ class SellerDatabase(context: Context) :
         }
     }
 
+    fun getSalesHistory(sellerEmail: String): List<SaleTransaction> {
+        val sales = mutableListOf<SaleTransaction>()
+
+        val sellerId = getSellerIdByEmail(sellerEmail)
+            ?: return sales
+
+        val cursor = readableDatabase.rawQuery(
+            """
+        SELECT id, transaction_code, amount,
+               payment_method, status, created_at
+        FROM transactions
+        WHERE seller_id = ?
+        ORDER BY created_at DESC
+        """.trimIndent(),
+            arrayOf(sellerId.toString())
+        )
+
+        cursor.use {
+            while (it.moveToNext()) {
+                sales.add(
+                    SaleTransaction(
+                        id = it.getLong(0),
+                        transactionCode = it.getString(1),
+                        amount = it.getLong(2),
+                        paymentMethod = it.getString(3),
+                        status = it.getString(4),
+                        createdAt = it.getLong(5)
+                    )
+                )
+            }
+        }
+
+        return sales
+    }
+
     fun getSellerByEmail(email: String): Seller? {
         val cursor = readableDatabase.query(
             "sellers",

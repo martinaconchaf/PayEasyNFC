@@ -21,6 +21,7 @@ fun ProfileScreen(
     onOpenBank: () -> Unit,
     onSwitchAccount: () -> Unit,
     onOpenSale: () -> Unit,
+    onOpenHistory: () -> Unit,
     onLogout: () -> Unit
 
 ) {
@@ -242,6 +243,13 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Nuevo cobro")
+            }
+
+            Button(
+                onClick = onOpenHistory,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Historial de ventas")
             }
 
             OutlinedButton(
