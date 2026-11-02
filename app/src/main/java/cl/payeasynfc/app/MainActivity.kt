@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
             var pantalla by remember { mutableStateOf("registro") }
             var vendedorEmail by remember { mutableStateOf("") }
             var montoVenta by remember { mutableStateOf(0L) }
+            var metodoPago by remember { mutableStateOf("") }
 
             MaterialTheme {
                 Surface(
@@ -83,10 +84,21 @@ class MainActivity : ComponentActivity() {
                         "cobro" -> SaleAmountScreen(
                             onAmountConfirmed = { monto ->
                                 montoVenta = monto
-                                pantalla = "perfil"
+                                pantalla = "metodoPago"
                             },
                             onBack = {
                                 pantalla = "perfil"
+                            }
+                        )
+
+                        "metodoPago" -> PaymentMethodScreen(
+                            amount = montoVenta,
+                            onMethodSelected = { metodo ->
+                                metodoPago = metodo
+                                pantalla = "perfil"
+                            },
+                            onBack = {
+                                pantalla = "cobro"
                             }
                         )
                     }
