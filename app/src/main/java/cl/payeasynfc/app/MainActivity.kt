@@ -35,6 +35,9 @@ class MainActivity : ComponentActivity() {
             var ventasHistorial by remember {
                 mutableStateOf<List<SaleTransaction>>(emptyList())
             }
+            var ventaSeleccionada by remember {
+                mutableStateOf<SaleTransaction?>(null)
+            }
 
             MaterialTheme {
                 Surface(
@@ -89,9 +92,21 @@ class MainActivity : ComponentActivity() {
                                 pantalla = "perfil"
                             },
                             onSelectSale = { venta ->
-                                // El detalle se implementará en el Día 2.
+                                ventaSeleccionada = venta
+                                pantalla = "detalleVenta"
                             }
                         )
+
+                        "detalleVenta" -> {
+                            ventaSeleccionada?.let { venta ->
+                                SaleDetailScreen(
+                                    sale = venta,
+                                    onBack = {
+                                        pantalla = "historial"
+                                    }
+                                )
+                            }
+                        }
 
                         "banco" -> BankAccountScreen(
                             sellerEmail = vendedorEmail,
