@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
             var transactionSaved by remember {
                 mutableStateOf(false)
             }
+            val context = androidx.compose.ui.platform.LocalContext.current
 
             MaterialTheme {
                 Surface(
@@ -173,6 +174,59 @@ class MainActivity : ComponentActivity() {
                             amount = montoVenta,
                             paymentMethod = metodoPago,
                             createdAt = transactionDate,
+
+                            onSaveReceipt = {
+                                try {
+                                    val pdf = ReceiptPdf.create(
+                                        context = context,
+                                        transactionId = transactionId,
+                                        amount = montoVenta,
+                                        paymentMethod = metodoPago,
+                                        createdAt = transactionDate
+                                    )
+
+                                    val saved = ReceiptPdf.saveToDownloads(context, pdf)
+
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        if (saved) {
+                                            "Comprobante guardado en Descargas"
+                                        } else {
+                                            "No se pudo guardar el comprobante"
+                                        },
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+
+                                } catch (e: Exception) {
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "Error al generar el PDF",
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            },
+
+                            onShareReceipt = {
+                                try {
+                                    val pdf = ReceiptPdf.create(
+                                        context = context,
+                                        transactionId = transactionId,
+                                        amount = montoVenta,
+                                        paymentMethod = metodoPago,
+                                        createdAt = transactionDate
+                                    )
+
+                                    ReceiptPdf.share(context, pdf)
+
+                                } catch (e: Exception) {
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "No se pudo compartir el comprobante",
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            },
+
                             onFinish = {
                                 montoVenta = 0L
                                 metodoPago = ""

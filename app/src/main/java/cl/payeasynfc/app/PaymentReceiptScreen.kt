@@ -22,7 +22,10 @@ fun PaymentReceiptScreen(
     amount: Long,
     paymentMethod: String,
     createdAt: Long,
-    onFinish: () -> Unit
+    onSaveReceipt: () -> Unit,
+    onShareReceipt: () -> Unit,
+    onFinish: () -> Unit,
+
 ) {
     val date = SimpleDateFormat(
         "dd/MM/yyyy HH:mm",
@@ -50,6 +53,27 @@ fun PaymentReceiptScreen(
             color = MaterialTheme.colorScheme.primary,
             style = MaterialTheme.typography.titleMedium
         )
+
+        Button(
+            onClick = onSaveReceipt,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Guardar comprobante PDF")
+        }
+
+        Button(
+            onClick = onShareReceipt,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Enviar comprobante")
+        }
+
+        Button(
+            onClick = onFinish,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Volver al menú principal")
+        }
 
         Text(
             text = "Este comprobante corresponde a una operación " +
