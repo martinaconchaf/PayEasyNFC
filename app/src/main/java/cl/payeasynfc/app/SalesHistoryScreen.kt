@@ -65,6 +65,9 @@ fun SalesHistoryScreen(
     var searchAmount by remember {
         mutableStateOf<Long?>(null)
     }
+    var sortByAmount by remember {
+        mutableStateOf("DESC")
+    }
 
     val filteredSales = remember(
         sales,
@@ -89,6 +92,12 @@ fun SalesHistoryScreen(
                     sale.amount == searchAmount
 
             matchesDate && matchesAmount
+        }
+    }
+    val sortedSales = remember(filteredSales, sortByAmount) {
+        when (sortByAmount) {
+            "ASC" -> filteredSales.sortedBy { it.amount }
+            else -> filteredSales.sortedByDescending { it.amount }
         }
     }
 
@@ -177,6 +186,34 @@ fun SalesHistoryScreen(
             Text("Buscar")
         }
 
+        Text(
+            text = "Ordenar ventas por monto",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = {
+                    sortByAmount = "DESC"
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Mayor a menor")
+            }
+
+            Button(
+                onClick = {
+                    sortByAmount = "ASC"
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Menor a mayor")
+            }
+        }
+
         OutlinedButton(
             onClick = {
                 dateQuery = ""
@@ -226,7 +263,7 @@ fun SalesHistoryScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(
-                    filteredSales,
+                    sortedSales,
                     key = { it.id }
                 ) { sale ->
 
