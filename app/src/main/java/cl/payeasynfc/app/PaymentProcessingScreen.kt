@@ -10,10 +10,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -21,16 +17,14 @@ import androidx.compose.ui.unit.dp
 fun PaymentProcessingScreen(
     amount: Long,
     paymentMethod: String,
-    onFinish: () -> Unit,
+    onResult: (Boolean, String) -> Unit,
     onBack: () -> Unit
 ) {
-    var processed by remember { mutableStateOf(false) }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Text(
             text = "Procesamiento del cobro",
@@ -40,43 +34,39 @@ fun PaymentProcessingScreen(
         Text("Monto: $${amount} CLP")
         Text("Método de pago: $paymentMethod")
 
-        if (!processed) {
-            Text(
-                text = "Verifica los datos antes de simular el procesamiento."
-            )
+        Text(
+            text = "Esperando respuesta del proveedor (simulación)."
+        )
 
-            Button(
-                onClick = { processed = true },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Simular procesamiento")
-            }
+        Button(
+            onClick = {
+                onResult(
+                    true,
+                    "El pago fue aprobado correctamente."
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Simular pago aprobado")
+        }
 
-            OutlinedButton(
-                onClick = onBack,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Volver")
-            }
-        } else {
-            Text(
-                text = "Operación aprobada (simulación)",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.titleLarge
-            )
+        Button(
+            onClick = {
+                onResult(
+                    false,
+                    "La operación fue rechazada por el proveedor simulado."
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Simular pago rechazado")
+        }
 
-            Text(
-                text = "La operación se ha procesado correctamente " +
-                        "en el entorno de demostración. No se realizó " +
-                        "ningún cargo real."
-            )
-
-            Button(
-                onClick = onFinish,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Finalizar")
-            }
+        OutlinedButton(
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Cancelar y volver")
         }
     }
 }

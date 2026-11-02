@@ -20,6 +20,8 @@ class MainActivity : ComponentActivity() {
             var montoVenta by remember { mutableStateOf(0L) }
             var metodoPago by remember { mutableStateOf("") }
             var transactionId by remember { mutableStateOf("") }
+            var pagoAprobado by remember { mutableStateOf(false) }
+            var mensajeResultado by remember { mutableStateOf("") }
 
             MaterialTheme {
                 Surface(
@@ -106,9 +108,15 @@ class MainActivity : ComponentActivity() {
                         "procesando" -> PaymentProcessingScreen(
                             amount = montoVenta,
                             paymentMethod = metodoPago,
-                            onFinish = {
-                                transactionId = "PAY-${System.currentTimeMillis()}"
-                                pantalla = "comprobante"
+                            onResult = { aprobado, mensaje ->
+                                pagoAprobado = aprobado
+                                mensajeResultado = mensaje
+
+                                if (aprobado) {
+                                    transactionId = "PAY-${System.currentTimeMillis()}"
+                                }
+
+                                pantalla = "resultadoPago"
                             },
                             onBack = {
                                 pantalla = "metodoPago"
@@ -123,6 +131,21 @@ class MainActivity : ComponentActivity() {
                                 montoVenta = 0L
                                 metodoPago = ""
                                 transactionId = ""
+                                pantalla = "perfil"
+                            }
+                        )
+
+                        "resultadoPago" -> PaymentResultScreen(
+                            approved = pagoAprobado,
+                            message = mensajeResultado,
+                            onContinue = {
+                                if (pagoAprobado) {
+                                    pantalla = "comprobante"
+                                } else {
+                                    pantalla = "metodoPago"
+                                }
+                            },
+                            onBack = {
                                 pantalla = "perfil"
                             }
                         )
