@@ -95,10 +95,21 @@ class MainActivity : ComponentActivity() {
                             amount = montoVenta,
                             onMethodSelected = { metodo ->
                                 metodoPago = metodo
-                                pantalla = "perfil"
+                                pantalla = "procesando"
                             },
                             onBack = {
                                 pantalla = "cobro"
+                            }
+                        )
+
+                        "procesando" -> PaymentProcessingScreen(
+                            amount = montoVenta,
+                            paymentMethod = metodoPago,
+                            onFinish = {
+                                pantalla = "perfil"
+                            },
+                            onBack = {
+                                pantalla = "metodoPago"
                             }
                         )
                     }
