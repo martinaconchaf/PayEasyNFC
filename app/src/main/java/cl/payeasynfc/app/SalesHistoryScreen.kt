@@ -103,6 +103,10 @@ fun SalesHistoryScreen(
                     sale.paymentMethod
                 ).contains("deb")
 
+                "CREDIT" -> normalizePaymentMethod(
+                    sale.paymentMethod
+                ).contains("cred")
+
                 "ALL" -> true
 
                 else -> true
@@ -286,6 +290,12 @@ fun SalesHistoryScreen(
                 Text("Solo débito")
             }
             OutlinedButton(
+                onClick = { cardFilter = "CREDIT" },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Crédito")
+            }
+            OutlinedButton(
                 onClick = {
                     cardFilter = "ALL"
                 },
@@ -301,6 +311,8 @@ fun SalesHistoryScreen(
                 searchDate = null
                 amountQuery = ""
                 searchAmount = null
+                cardFilter = "ALL"
+                sortMode = "AMOUNT_DESC"
                 errorMessage = ""
             },
             modifier = Modifier.fillMaxWidth()
@@ -313,14 +325,6 @@ fun SalesHistoryScreen(
                 text = errorMessage,
                 color = MaterialTheme.colorScheme.error
             )
-        }
-
-        var amountQuery by remember {
-            mutableStateOf("")
-        }
-
-        var searchAmount by remember {
-            mutableStateOf<Long?>(null)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
