@@ -141,22 +141,86 @@ class SellerDatabase(context: Context) :
         accountNumber: String
     ): Boolean {
 
-        val values = android.content.ContentValues().apply {
-            put("seller_id", sellerId)
-            put("bank_name", bankName)
+        val db = writableDatabase
+
+        val values = ContentValues().apply {
+            put("bank_name", bankName.trim())
             put("account_type", accountType)
-            put("account_holder", accountHolder)
+            put("account_holder", accountHolder.trim())
             put("account_number", accountNumber)
         }
 
-        val result = writableDatabase.insertWithOnConflict(
+        var saved = false
+
+        db.beginTransaction()
+
+        try {
+            // Primero intenta actualizar la cuenta existente.
+            val updatedRows = db.update(
+                "bank_accounts",
+                values,
+                "seller_id = ?",
+                arrayOf(sellerId.toString())
+            )
+
+            // Si no existe una cuenta, la inserta.
+            val result = if (updatedRows > 0) {
+                updatedRows.toLong()
+            } else {
+                values.put("seller_id", sellerId)
+
+                db.insert(
+                    "bank_accounts",
+                    null,
+                    values
+                )
+            }
+
+            if (result != -1L) {
+                db.setTransactionSuccessful()
+                saved = true
+            }
+
+        } catch (e: android.database.sqlite.SQLiteException) {
+            saved = false
+        } finally {
+            db.endTransaction()
+        }
+
+        return saved
+    }
+
+    fun getBankAccountBySellerId(
+        sellerId: Long
+    ): BankAccountRecord? {
+
+        val cursor = readableDatabase.query(
             "bank_accounts",
+            arrayOf(
+                "bank_name",
+                "account_type",
+                "account_holder",
+                "account_number"
+            ),
+            "seller_id = ?",
+            arrayOf(sellerId.toString()),
             null,
-            values,
-            SQLiteDatabase.CONFLICT_REPLACE
+            null,
+            null
         )
 
-        return result != -1L
+        cursor.use {
+            return if (it.moveToFirst()) {
+                BankAccountRecord(
+                    bankName = it.getString(0),
+                    accountType = it.getString(1),
+                    accountHolder = it.getString(2),
+                    accountNumber = it.getString(3)
+                )
+            } else {
+                null
+            }
+        }
     }
 
     override fun onConfigure(db: SQLiteDatabase) {
@@ -823,6 +887,12 @@ class SellerDatabase(context: Context) :
     }
 }
 
+data class BankAccountRecord(
+    val bankName: String,
+    val accountType: String,
+    val accountHolder: String,
+    val accountNumber: String
+)
 enum class LoginResult {
     SUCCESS,
     INVALID_CREDENTIALS,

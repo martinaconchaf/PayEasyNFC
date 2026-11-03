@@ -37,11 +37,41 @@ fun BankAccountScreen(
     var menuExpanded by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
+    var loadingAccount by remember {
+        mutableStateOf(true)
+    }
 
     DisposableEffect(Unit) {
         onDispose {
             executor.shutdown()
             database.close()
+        }
+    }
+
+    LaunchedEffect(sellerEmail) {
+        loadingAccount = true
+
+        executor.execute {
+            val sellerId = database.getSellerIdByEmail(sellerEmail)
+
+            val existingAccount = sellerId?.let {
+                database.getBankAccountBySellerId(it)
+            }
+
+            mainHandler.post {
+                if (existingAccount != null) {
+                    bankName = existingAccount.bankName
+                    accountType = existingAccount.accountType
+                    accountHolder = existingAccount.accountHolder
+                    accountNumber = existingAccount.accountNumber
+
+                    message = "Se cargó la cuenta bancaria registrada."
+                } else {
+                    message = "Este vendedor todavía no tiene una cuenta bancaria."
+                }
+
+                loadingAccount = false
+            }
         }
     }
 
@@ -81,7 +111,7 @@ fun BankAccountScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Asociar cuenta bancaria",
+            text = "Administrar cuenta bancaria",
             style = MaterialTheme.typography.headlineSmall
         )
 
@@ -211,7 +241,7 @@ fun BankAccountScreen(
                     }
                 }
             },
-            enabled = !saving,
+            enabled = !saving && !loadingAccount,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(if (saving) "Guardando..." else "Guardar cuenta")
