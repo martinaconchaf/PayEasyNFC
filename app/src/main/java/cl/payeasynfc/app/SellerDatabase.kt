@@ -531,6 +531,7 @@ class SellerDatabase(context: Context) :
         }
     }
 
+
     fun getSellerByEmail(email: String): Seller? {
         val cursor = readableDatabase.query(
             "sellers",

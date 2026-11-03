@@ -41,6 +41,30 @@ fun DailySalesScreen(
         mutableIntStateOf(0)
     }
 
+    var startDateText by remember {
+        mutableStateOf("")
+    }
+
+    var endDateText by remember {
+        mutableStateOf("")
+    }
+
+    var periodTotal by remember {
+        mutableLongStateOf(0L)
+    }
+
+    var periodCount by remember {
+        mutableIntStateOf(0)
+    }
+
+    var periodAverage by remember {
+        mutableDoubleStateOf(0.0)
+    }
+
+    var periodMessage by remember {
+        mutableStateOf("")
+    }
+
     fun calculateDailyTotal() {
         val calendar = Calendar.getInstance().apply {
             timeInMillis = selectedDate
@@ -100,6 +124,75 @@ fun DailySalesScreen(
         )
 
         message = "Consulta mensual realizada correctamente."
+    }
+
+    fun calculatePeriodSummary() {
+        val dateFormat = SimpleDateFormat(
+            "dd/MM/yyyy",
+            Locale.getDefault()
+        ).apply {
+            isLenient = false
+        }
+
+        val startDate = try {
+            dateFormat.parse(startDateText)
+        } catch (e: Exception) {
+            null
+        }
+
+        val endDate = try {
+            dateFormat.parse(endDateText)
+        } catch (e: Exception) {
+            null
+        }
+
+        if (startDate == null || endDate == null) {
+            periodMessage = "Ingresa fechas válidas en formato dd/MM/yyyy."
+            return
+        }
+
+        val startCalendar = Calendar.getInstance().apply {
+            time = startDate
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        val endCalendar = Calendar.getInstance().apply {
+            time = endDate
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        if (endCalendar.before(startCalendar)) {
+            periodMessage = "La fecha final no puede ser anterior a la inicial."
+            return
+        }
+
+        val startTimestamp = startCalendar.timeInMillis
+
+        endCalendar.add(Calendar.DAY_OF_MONTH, 1)
+        val endTimestampExclusive = endCalendar.timeInMillis
+
+        val result = database.getSalesPeriodSummary(
+            sellerEmail,
+            startTimestamp,
+            endTimestampExclusive
+        )
+
+        periodTotal = result.first
+        periodCount = result.second
+
+        periodAverage = if (periodCount > 0) {
+            periodTotal.toDouble() / periodCount
+        } else {
+            0.0
+        }
+
+        periodMessage = "Consulta del período realizada correctamente."
     }
 
     val formattedDate = SimpleDateFormat(
@@ -204,6 +297,66 @@ fun DailySalesScreen(
 
         if (message.isNotEmpty()) {
             Text(message)
+        }
+
+        HorizontalDivider()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "ESTADÍSTICAS POR PERÍODO",
+            style = MaterialTheme.typography.titleLarge
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = startDateText,
+            onValueChange = { startDateText = it },
+            label = { Text("Fecha inicial (dd/MM/yyyy)") },
+            placeholder = { Text("01/11/2026") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        OutlinedTextField(
+            value = endDateText,
+            onValueChange = { endDateText = it },
+            label = { Text("Fecha final (dd/MM/yyyy)") },
+            placeholder = { Text("30/11/2026") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Button(
+            onClick = { calculatePeriodSummary() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Consultar período")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "TOTAL DEL PERÍODO: $$periodTotal",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Text(
+            text = "CANTIDAD DE VENTAS: $periodCount",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Text(
+            text = "PROMEDIO POR VENTA: $${"%.2f".format(Locale.getDefault(), periodAverage)}",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        if (periodMessage.isNotEmpty()) {
+            Text(
+                text = periodMessage,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
 
         Spacer(modifier = Modifier.weight(1f))
