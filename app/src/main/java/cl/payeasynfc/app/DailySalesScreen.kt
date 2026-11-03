@@ -65,6 +65,14 @@ fun DailySalesScreen(
         mutableStateOf("")
     }
 
+    var maximumSale by remember {
+        mutableStateOf<Long?>(null)
+    }
+
+    var minimumSale by remember {
+        mutableStateOf<Long?>(null)
+    }
+
     fun calculateDailyTotal() {
         val calendar = Calendar.getInstance().apply {
             timeInMillis = selectedDate
@@ -185,6 +193,15 @@ fun DailySalesScreen(
 
         periodTotal = result.first
         periodCount = result.second
+
+        val maxMinResult = database.getMaxMinSales(
+            sellerEmail,
+            startTimestamp,
+            endTimestampExclusive
+        )
+
+        maximumSale = maxMinResult.first
+        minimumSale = maxMinResult.second
 
         periodAverage = if (periodCount > 0) {
             periodTotal.toDouble() / periodCount
@@ -358,6 +375,32 @@ fun DailySalesScreen(
                 color = MaterialTheme.colorScheme.primary
             )
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "VENTA DE MAYOR MONTO",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Text(
+            text = maximumSale?.let { "$$it" } ?: "Sin ventas",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "VENTA DE MENOR MONTO",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Text(
+            text = minimumSale?.let { "$$it" } ?: "Sin ventas",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.secondary
+        )
 
         Spacer(modifier = Modifier.weight(1f))
 

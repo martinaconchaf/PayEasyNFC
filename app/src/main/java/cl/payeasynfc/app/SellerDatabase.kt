@@ -531,6 +531,42 @@ class SellerDatabase(context: Context) :
         }
     }
 
+    fun getMaxMinSales(
+        sellerEmail: String,
+        startDate: Long,
+        endDateExclusive: Long
+    ): Pair<Long?, Long?> {
+        val sellerId = getSellerIdByEmail(sellerEmail)
+            ?: return Pair(null, null)
+
+        val cursor = readableDatabase.rawQuery(
+            """
+        SELECT MAX(amount), MIN(amount)
+        FROM transactions
+        WHERE seller_id = ?
+          AND status = ?
+          AND created_at >= ?
+          AND created_at < ?
+        """.trimIndent(),
+            arrayOf(
+                sellerId.toString(),
+                "APPROVED",
+                startDate.toString(),
+                endDateExclusive.toString()
+            )
+        )
+
+        cursor.use {
+            if (it.moveToFirst()) {
+                val maximum = if (it.isNull(0)) null else it.getLong(0)
+                val minimum = if (it.isNull(1)) null else it.getLong(1)
+
+                return Pair(maximum, minimum)
+            }
+        }
+
+        return Pair(null, null)
+    }
 
     fun getSellerByEmail(email: String): Seller? {
         val cursor = readableDatabase.query(
