@@ -435,6 +435,36 @@ class SellerDatabase(context: Context) :
         }
     }
 
+    fun getMonthlySalesTotal(
+        sellerEmail: String,
+        startOfMonth: Long,
+        startOfNextMonth: Long
+    ): Long {
+        val sellerId = getSellerIdByEmail(sellerEmail)
+            ?: return 0L
+
+        val cursor = readableDatabase.rawQuery(
+            """
+        SELECT COALESCE(SUM(amount), 0)
+        FROM transactions
+        WHERE seller_id = ?
+          AND status = ?
+          AND created_at >= ?
+          AND created_at < ?
+        """.trimIndent(),
+            arrayOf(
+                sellerId.toString(),
+                "APPROVED",
+                startOfMonth.toString(),
+                startOfNextMonth.toString()
+            )
+        )
+
+        cursor.use {
+            return if (it.moveToFirst()) it.getLong(0) else 0L
+        }
+    }
+
     fun getSellerByEmail(email: String): Seller? {
         val cursor = readableDatabase.query(
             "sellers",

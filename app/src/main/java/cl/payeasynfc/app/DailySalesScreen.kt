@@ -29,6 +29,10 @@ fun DailySalesScreen(
         mutableIntStateOf(0)
     }
 
+    var monthlyTotal by remember {
+        mutableLongStateOf(0L)
+    }
+
     var message by remember {
         mutableStateOf("")
     }
@@ -61,6 +65,31 @@ fun DailySalesScreen(
         )
 
         message = "Consulta realizada correctamente."
+    }
+
+    fun calculateMonthlyTotal() {
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = selectedDate
+            set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        val startOfMonth = calendar.timeInMillis
+
+        calendar.add(Calendar.MONTH, 1)
+
+        val startOfNextMonth = calendar.timeInMillis
+
+        monthlyTotal = database.getMonthlySalesTotal(
+            sellerEmail,
+            startOfMonth,
+            startOfNextMonth
+        )
+
+        message = "Consulta mensual realizada correctamente."
     }
 
     val formattedDate = SimpleDateFormat(
@@ -116,6 +145,15 @@ fun DailySalesScreen(
             Text("Consultar total del día")
         }
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            onClick = { calculateMonthlyTotal() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Consultar total del mes")
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
@@ -139,6 +177,19 @@ fun DailySalesScreen(
             text = dailyCount.toString(),
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Text(
+            text = "TOTAL VENDIDO EN EL MES",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Text(
+            text = "$${monthlyTotal}",
+            style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.secondary
         )
 
         if (message.isNotEmpty()) {
