@@ -73,6 +73,14 @@ fun DailySalesScreen(
         mutableStateOf<Long?>(null)
     }
 
+    var debitCount by remember {
+        mutableIntStateOf(0)
+    }
+
+    var creditCount by remember {
+        mutableIntStateOf(0)
+    }
+
     fun calculateDailyTotal() {
         val calendar = Calendar.getInstance().apply {
             timeInMillis = selectedDate
@@ -202,6 +210,15 @@ fun DailySalesScreen(
 
         maximumSale = maxMinResult.first
         minimumSale = maxMinResult.second
+
+        val paymentCounts = database.getPaymentMethodCounts(
+            sellerEmail,
+            startTimestamp,
+            endTimestampExclusive
+        )
+
+        debitCount = paymentCounts.first
+        creditCount = paymentCounts.second
 
         periodAverage = if (periodCount > 0) {
             periodTotal.toDouble() / periodCount
@@ -400,6 +417,34 @@ fun DailySalesScreen(
             text = minimumSale?.let { "$$it" } ?: "Sin ventas",
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.secondary
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        HorizontalDivider()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "CANTIDAD DE PAGOS POR MÉTODO",
+            style = MaterialTheme.typography.titleLarge
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "Pagos con débito: $debitCount",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Text(
+            text = "Pagos con crédito: $creditCount",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Text(
+            text = "Total de pagos: ${debitCount + creditCount}",
+            style = MaterialTheme.typography.titleMedium
         )
 
         Spacer(modifier = Modifier.weight(1f))

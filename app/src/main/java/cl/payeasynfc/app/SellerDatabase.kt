@@ -568,6 +568,57 @@ class SellerDatabase(context: Context) :
         return Pair(null, null)
     }
 
+    fun getPaymentMethodCounts(
+        sellerEmail: String,
+        startDate: Long,
+        endDateExclusive: Long
+    ): Pair<Int, Int> {
+        val sellerId = getSellerIdByEmail(sellerEmail)
+            ?: return Pair(0, 0)
+
+        val cursor = readableDatabase.rawQuery(
+            """
+        SELECT
+            SUM(
+                CASE
+                    WHEN LOWER(TRIM(payment_method))
+                    IN ('debito', 'débito', 'debit')
+                    THEN 1 ELSE 0
+                END
+            ),
+            SUM(
+                CASE
+                    WHEN LOWER(TRIM(payment_method))
+                    IN ('credito', 'crédito', 'credit')
+                    THEN 1 ELSE 0
+                END
+            )
+        FROM transactions
+        WHERE seller_id = ?
+          AND status = ?
+          AND created_at >= ?
+          AND created_at < ?
+        """.trimIndent(),
+            arrayOf(
+                sellerId.toString(),
+                "APPROVED",
+                startDate.toString(),
+                endDateExclusive.toString()
+            )
+        )
+
+        cursor.use {
+            return if (it.moveToFirst()) {
+                Pair(
+                    it.getInt(0),
+                    it.getInt(1)
+                )
+            } else {
+                Pair(0, 0)
+            }
+        }
+    }
+
     fun getSellerByEmail(email: String): Seller? {
         val cursor = readableDatabase.query(
             "sellers",
