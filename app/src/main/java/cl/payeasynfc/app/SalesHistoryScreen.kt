@@ -332,8 +332,10 @@ fun SalesHistoryScreen(
         if (filteredSales.isEmpty()) {
             Text(
                 text = if (
-                    searchDate != null || searchAmount != null
-                ) {
+                    searchDate != null ||
+                    searchAmount != null ||
+                    cardFilter != "ALL"
+                ){
                     "No se encontraron ventas con los criterios ingresados."
                 } else {
                     "Todavía no tienes ventas registradas."
