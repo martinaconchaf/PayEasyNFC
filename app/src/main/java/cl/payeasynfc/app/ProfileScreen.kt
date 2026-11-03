@@ -22,6 +22,7 @@ fun ProfileScreen(
     onSwitchAccount: () -> Unit,
     onOpenSale: () -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenStatistics: () -> Unit,
     onLogout: () -> Unit
 
 ) {
@@ -250,6 +251,13 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Historial de ventas")
+            }
+
+            OutlinedButton(
+                onClick = onOpenStatistics,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Estadísticas de ventas")
             }
 
             OutlinedButton(

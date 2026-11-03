@@ -71,6 +71,9 @@ class MainActivity : ComponentActivity() {
 
                                 pantalla = "historial"
                             },
+                            onOpenStatistics = {
+                                pantalla = "estadisticas"
+                            },
                             onOpenBank = {
                                 pantalla = "banco"
                             },
@@ -111,6 +114,14 @@ class MainActivity : ComponentActivity() {
                         "banco" -> BankAccountScreen(
                             sellerEmail = vendedorEmail,
                             onBackToLogin = {
+                                pantalla = "perfil"
+                            }
+                        )
+
+                        "estadisticas" -> DailySalesScreen(
+                            sellerEmail = vendedorEmail,
+                            database = sellerDatabase,
+                            onBack = {
                                 pantalla = "perfil"
                             }
                         )

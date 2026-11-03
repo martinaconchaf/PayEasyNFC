@@ -370,6 +370,40 @@ class SellerDatabase(context: Context) :
 
         return sales
     }
+    fun getDailySalesTotal(
+        sellerEmail: String,
+        startOfDay: Long,
+        startOfNextDay: Long
+    ): Long {
+
+        val sellerId = getSellerIdByEmail(sellerEmail)
+            ?: return 0L
+
+        val cursor = readableDatabase.rawQuery(
+            """
+        SELECT COALESCE(SUM(amount), 0)
+        FROM transactions
+        WHERE seller_id = ?
+          AND status = ?
+          AND created_at >= ?
+          AND created_at < ?
+        """.trimIndent(),
+            arrayOf(
+                sellerId.toString(),
+                "APPROVED",
+                startOfDay.toString(),
+                startOfNextDay.toString()
+            )
+        )
+
+        cursor.use {
+            return if (it.moveToFirst()) {
+                it.getLong(0)
+            } else {
+                0L
+            }
+        }
+    }
 
     fun getSellerByEmail(email: String): Seller? {
         val cursor = readableDatabase.query(
