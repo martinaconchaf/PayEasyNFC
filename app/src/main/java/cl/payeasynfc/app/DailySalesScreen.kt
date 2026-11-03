@@ -37,6 +37,10 @@ fun DailySalesScreen(
         mutableStateOf("")
     }
 
+    var monthlyCount by remember {
+        mutableIntStateOf(0)
+    }
+
     fun calculateDailyTotal() {
         val calendar = Calendar.getInstance().apply {
             timeInMillis = selectedDate
@@ -84,6 +88,12 @@ fun DailySalesScreen(
         val startOfNextMonth = calendar.timeInMillis
 
         monthlyTotal = database.getMonthlySalesTotal(
+            sellerEmail,
+            startOfMonth,
+            startOfNextMonth
+        )
+
+        monthlyCount = database.getMonthlySalesCount(
             sellerEmail,
             startOfMonth,
             startOfNextMonth

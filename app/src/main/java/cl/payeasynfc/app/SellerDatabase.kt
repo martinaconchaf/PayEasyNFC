@@ -465,6 +465,72 @@ class SellerDatabase(context: Context) :
         }
     }
 
+    fun getMonthlySalesCount(
+        sellerEmail: String,
+        startOfMonth: Long,
+        startOfNextMonth: Long
+    ): Int {
+        val sellerId = getSellerIdByEmail(sellerEmail)
+            ?: return 0
+
+        val cursor = readableDatabase.rawQuery(
+            """
+        SELECT COUNT(*)
+        FROM transactions
+        WHERE seller_id = ?
+          AND status = ?
+          AND created_at >= ?
+          AND created_at < ?
+        """.trimIndent(),
+            arrayOf(
+                sellerId.toString(),
+                "APPROVED",
+                startOfMonth.toString(),
+                startOfNextMonth.toString()
+            )
+        )
+
+        cursor.use {
+            return if (it.moveToFirst()) it.getInt(0) else 0
+        }
+    }
+
+    fun getSalesPeriodSummary(
+        sellerEmail: String,
+        startDate: Long,
+        endDateExclusive: Long
+    ): Pair<Long, Int> {
+        val sellerId = getSellerIdByEmail(sellerEmail)
+            ?: return Pair(0L, 0)
+
+        val cursor = readableDatabase.rawQuery(
+            """
+        SELECT
+            COALESCE(SUM(amount), 0),
+            COUNT(*)
+        FROM transactions
+        WHERE seller_id = ?
+          AND status = ?
+          AND created_at >= ?
+          AND created_at < ?
+        """.trimIndent(),
+            arrayOf(
+                sellerId.toString(),
+                "APPROVED",
+                startDate.toString(),
+                endDateExclusive.toString()
+            )
+        )
+
+        cursor.use {
+            return if (it.moveToFirst()) {
+                Pair(it.getLong(0), it.getInt(1))
+            } else {
+                Pair(0L, 0)
+            }
+        }
+    }
+
     fun getSellerByEmail(email: String): Seller? {
         val cursor = readableDatabase.query(
             "sellers",
