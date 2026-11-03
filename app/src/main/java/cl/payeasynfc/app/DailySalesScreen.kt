@@ -25,6 +25,10 @@ fun DailySalesScreen(
         mutableLongStateOf(0L)
     }
 
+    var dailyCount by remember {
+        mutableIntStateOf(0)
+    }
+
     var message by remember {
         mutableStateOf("")
     }
@@ -45,6 +49,12 @@ fun DailySalesScreen(
         val startOfNextDay = calendar.timeInMillis
 
         dailyTotal = database.getDailySalesTotal(
+            sellerEmail,
+            startOfDay,
+            startOfNextDay
+        )
+
+        dailyCount = database.getDailySalesCount(
             sellerEmail,
             startOfDay,
             startOfNextDay
@@ -115,6 +125,18 @@ fun DailySalesScreen(
 
         Text(
             text = "$${dailyTotal}",
+            style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Text(
+            text = "CANTIDAD DE VENTAS",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Text(
+            text = dailyCount.toString(),
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.primary
         )

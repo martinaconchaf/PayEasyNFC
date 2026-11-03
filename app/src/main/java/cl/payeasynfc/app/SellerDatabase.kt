@@ -405,6 +405,36 @@ class SellerDatabase(context: Context) :
         }
     }
 
+    fun getDailySalesCount(
+        sellerEmail: String,
+        startOfDay: Long,
+        startOfNextDay: Long
+    ): Int {
+        val sellerId = getSellerIdByEmail(sellerEmail)
+            ?: return 0
+
+        val cursor = readableDatabase.rawQuery(
+            """
+        SELECT COUNT(*)
+        FROM transactions
+        WHERE seller_id = ?
+          AND status = ?
+          AND created_at >= ?
+          AND created_at < ?
+        """.trimIndent(),
+            arrayOf(
+                sellerId.toString(),
+                "APPROVED",
+                startOfDay.toString(),
+                startOfNextDay.toString()
+            )
+        )
+
+        cursor.use {
+            return if (it.moveToFirst()) it.getInt(0) else 0
+        }
+    }
+
     fun getSellerByEmail(email: String): Seller? {
         val cursor = readableDatabase.query(
             "sellers",
